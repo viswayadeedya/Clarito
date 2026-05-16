@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background with rounded corners -->
+  <rect width="64" height="64" rx="24" fill="#6366f1"/>
+
+  <!-- Bold serif T -->
+  <text
+    x="32"
+    y="43"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="36"
+    font-weight="700"
+    fill="white"
+  >C</text>
+
+  <!-- Curved arrow / trace path beneath the T -->
+  <path
+    d="M20 54 Q32 47 44 54"
+    stroke="white"
+    stroke-opacity="0.45"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <!-- Arrowhead pointing right -->
+  <path
+    d="M41 51 L45 54 L41 57"
+    stroke="white"
+    stroke-opacity="0.45"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+</svg>

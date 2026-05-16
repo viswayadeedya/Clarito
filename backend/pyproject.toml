@@ -1,0 +1,16 @@
+[project]
+name = "clarito"
+version = "0.1.0"
+description = "Clarito API"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.4",
+    "asyncpg>=0.31.0",
+    "bcrypt>=5.0.0",
+    "fastapi-mail>=1.6.4",
+    "fastapi[standard]>=0.136.1",
+    "psycopg2-binary>=2.9.12",
+    "pydantic-settings>=2.14.1",
+    "python-jose[cryptography]>=3.5.0",
+    "sqlalchemy>=2.0.49",
+]
