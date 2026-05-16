@@ -52,9 +52,80 @@ export default function Canvas() {
 
   if (!chapter) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500">
-        Loading…
-      </div>
+      <>
+        <style>{`
+          @keyframes cv-logoIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes cv-textIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+          }
+          @keyframes cv-sketch {
+            0%       { stroke-dashoffset: 220; opacity: 0.9; }
+            60%      { stroke-dashoffset: 0;   opacity: 0.9; }
+            78%      { stroke-dashoffset: 0;   opacity: 0.15; }
+            95%      { stroke-dashoffset: 220; opacity: 0.15; }
+            100%     { stroke-dashoffset: 220; opacity: 0.9; }
+          }
+          @keyframes cv-arrowhead {
+            0%, 48%  { stroke-dashoffset: 36; opacity: 0; }
+            68%      { stroke-dashoffset: 0;  opacity: 0.9; }
+            78%      { stroke-dashoffset: 0;  opacity: 0.15; }
+            95%      { stroke-dashoffset: 36; opacity: 0.15; }
+            100%     { stroke-dashoffset: 36; opacity: 0; }
+          }
+        `}</style>
+        <div style={{
+          minHeight: '100vh',
+          background: '#0f0f0f',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'system-ui, sans-serif',
+          gap: '28px',
+        }}>
+          {/* Wordmark */}
+          <span style={{
+            fontSize: '30px',
+            fontWeight: '800',
+            color: '#6366f1',
+            letterSpacing: '-1.5px',
+            animation: 'cv-logoIn 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both',
+          }}>
+            Clarito
+          </span>
+
+          {/* Excalidraw-style sketch loop */}
+          <svg width="148" height="56" viewBox="0 0 148 56" fill="none">
+            <path
+              d="M 10 40 Q 40 10 74 28 Q 102 44 130 22"
+              stroke="#6366f1" strokeWidth="2.2" strokeLinecap="round" fill="none"
+              strokeDasharray="220"
+              style={{ animation: 'cv-sketch 1.7s ease-in-out 0.55s infinite' }}
+            />
+            <path
+              d="M 118 14 L 131 22 L 120 32"
+              stroke="#6366f1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"
+              strokeDasharray="36"
+              style={{ animation: 'cv-arrowhead 1.7s ease-in-out 0.55s infinite' }}
+            />
+          </svg>
+
+          {/* Subtitle */}
+          <p style={{
+            color: '#3f3f46',
+            fontSize: '13px',
+            margin: 0,
+            letterSpacing: '0.3px',
+            animation: 'cv-textIn 0.5s ease 1.1s both',
+          }}>
+            Opening your canvas…
+          </p>
+        </div>
+      </>
     )
   }
 
