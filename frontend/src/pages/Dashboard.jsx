@@ -464,6 +464,34 @@ export default function Dashboard() {
           from { opacity: 0; transform: scale(0.93) translateY(-6px); }
           to   { opacity: 1; transform: scale(1) translateY(0); }
         }
+        @keyframes db-shimmer {
+          0%   { background-position: -600px 0; }
+          100% { background-position: 600px 0; }
+        }
+        @keyframes db-skeletonIn {
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes db-penBob {
+          0%, 100% { transform: translate(0, 0) rotate(-20deg); }
+          50%       { transform: translate(6px, -6px) rotate(-14deg); }
+        }
+        @keyframes db-trailGrow {
+          0%   { stroke-dashoffset: 120; opacity: 0.2; }
+          50%  { stroke-dashoffset: 0;   opacity: 0.7; }
+          100% { stroke-dashoffset: 120; opacity: 0.2; }
+        }
+        .db-skel {
+          background: linear-gradient(
+            90deg,
+            rgba(255,255,255,0.03) 0%,
+            rgba(99,102,241,0.08) 40%,
+            rgba(255,255,255,0.03) 80%
+          );
+          background-size: 600px 100%;
+          animation: db-shimmer 1.8s ease-in-out infinite;
+          border-radius: 7px;
+        }
         .db-stroke {
           stroke-dasharray: 1600;
           stroke-dashoffset: 1600;
@@ -590,7 +618,57 @@ export default function Dashboard() {
             Workspaces
           </h1>
 
-          {!loaded ? null : workspaces.length === 0 ? (
+          {!loaded ? (
+            <div style={{ animation: 'db-skeletonIn 0.4s ease both' }}>
+              {/* Animated pen + trail */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
+                  style={{ animation: 'db-penBob 1.4s ease-in-out infinite', flexShrink: 0 }}>
+                  <path d="M6 22 L10 10 L20 6 L22 8 L12 20 Z"
+                    fill="rgba(99,102,241,0.15)" stroke="#6366f1" strokeWidth="1.4"
+                    strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M6 22 L10 18" stroke="#6366f1" strokeWidth="1.4" strokeLinecap="round"/>
+                  <path d="M6 22 Q14 20 22 14"
+                    stroke="#6366f1" strokeWidth="1.4" strokeLinecap="round"
+                    strokeDasharray="120" fill="none"
+                    style={{ animation: 'db-trailGrow 1.4s ease-in-out infinite' }}/>
+                </svg>
+                <span style={{ color: '#3f3f46', fontSize: '13.5px', fontWeight: '500', letterSpacing: '0.2px' }}>
+                  Loading workspaces…
+                </span>
+              </div>
+
+              {/* Skeleton card grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '16px',
+              }}>
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} style={{
+                    background: '#141414',
+                    border: '1px solid #1f1f1f',
+                    borderRadius: '14px',
+                    padding: '22px 20px',
+                    display: 'flex', flexDirection: 'column', gap: '14px',
+                    animation: `db-skeletonIn 0.4s cubic-bezier(0.22,1,0.36,1) ${i * 0.07}s both`,
+                  }}>
+                    {/* Top row: title + icon */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div className="db-skel" style={{ height: '14px', borderRadius: '7px', flex: 1, maxWidth: `${55 + (i % 3) * 15}%` }} />
+                      <div className="db-skel" style={{ width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0 }} />
+                    </div>
+                    {/* Optional mid line */}
+                    {i % 2 === 0 && (
+                      <div className="db-skel" style={{ height: '11px', borderRadius: '6px', width: '40%' }} />
+                    )}
+                    {/* Date line */}
+                    <div className="db-skel" style={{ height: '10px', borderRadius: '6px', width: '30%', marginTop: '2px' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : workspaces.length === 0 ? (
             /* Empty state */
             <div style={{ textAlign: 'center', paddingTop: '80px' }}>
               <svg width="72" height="72" viewBox="0 0 72 72" fill="none" style={{ margin: '0 auto 20px' }}>
