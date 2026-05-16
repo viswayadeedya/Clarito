@@ -334,6 +334,9 @@ export default function Workspace() {
             <button className="ws-back-btn" onClick={() => navigate('/dashboard')}>
               ← Workspaces
             </button>
+            <button className="ws-back-btn" onClick={() => { localStorage.removeItem('token'); navigate('/login') }}>
+              Logout
+            </button>
           </div>
         </nav>
 
