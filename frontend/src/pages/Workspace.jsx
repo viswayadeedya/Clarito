@@ -456,7 +456,7 @@ export default function Workspace() {
                   key={ch.id}
                   chapter={ch}
                   index={i}
-                  onOpen={chId => navigate(`/canvas/${chId}`)}
+                  onOpen={chId => navigate(`/canvas/${chId}`, { state: { chapter: chapters.find(c => c.id === chId) } })}
                   onDelete={deleteChapter}
                 />
               ))}

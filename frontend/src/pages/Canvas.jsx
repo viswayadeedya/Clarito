@@ -1,19 +1,24 @@
 import { Excalidraw } from '@excalidraw/excalidraw'
 import '@excalidraw/excalidraw/index.css'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import api from '../api/client'
 
 export default function Canvas() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [chapter, setChapter] = useState(null)
+  const { state } = useLocation()
+  const [chapter, setChapter] = useState(state?.chapter ?? null)
   const [saveStatus, setSaveStatus] = useState('saved')
   const pendingRef = useRef(null)
   const dirtyRef = useRef(false)
   const lastSavedAtRef = useRef(0)
 
   useEffect(() => {
+    if (state?.chapter) {
+      document.title = state.chapter.title
+    }
+    // Always fetch in background to get latest canvas_data
     api.get(`/chapters/${id}`)
       .then(r => {
         setChapter(r.data)
