@@ -79,6 +79,16 @@ class WaitlistResponse(BaseModel):
     created_at: datetime
 
 
+class ChapterSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    user_id: uuid.UUID
+    workspace_id: uuid.UUID | None
+    created_at: datetime
+
+
 class ChapterResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

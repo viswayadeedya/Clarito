@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Chapter, User
-from app.schemas import ChapterCreate, ChapterResponse, ChapterUpdate
+from app.schemas import ChapterCreate, ChapterResponse, ChapterSummary, ChapterUpdate
 
 router = APIRouter(prefix="/chapters", tags=["chapters"])
 
@@ -36,7 +36,7 @@ async def create_chapter(
     return chapter
 
 
-@router.get("/", response_model=list[ChapterResponse])
+@router.get("/", response_model=list[ChapterSummary])
 async def get_chapters(
     workspace_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),
