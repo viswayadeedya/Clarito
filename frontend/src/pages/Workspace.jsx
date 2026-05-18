@@ -230,10 +230,10 @@ export default function Workspace() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([api.get(`/workspaces/${id}`), api.get('/chapters/')])
+    Promise.all([api.get(`/workspaces/${id}`), api.get(`/chapters/?workspace_id=${id}`)])
       .then(([wsRes, chapRes]) => {
         setWorkspace(wsRes.data)
-        setChapters(chapRes.data.filter(c => c.workspace_id === id))
+        setChapters(chapRes.data)
         setLoaded(true)
       })
       .catch(() => navigate('/dashboard'))

@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,14 +38,14 @@ async def create_chapter(
 
 @router.get("/", response_model=list[ChapterResponse])
 async def get_chapters(
+    workspace_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Chapter)
-        .where(Chapter.user_id == current_user.id)
-        .order_by(Chapter.created_at.desc())
-    )
+    query = select(Chapter).where(Chapter.user_id == current_user.id)
+    if workspace_id:
+        query = query.where(Chapter.workspace_id == workspace_id)
+    result = await db.execute(query.order_by(Chapter.created_at.desc()))
     return result.scalars().all()
 
 
