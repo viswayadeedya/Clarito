@@ -182,32 +182,33 @@ function ScrollHero() {
       }
     }
 
-    // Text 1: 0% → 15%
-    const s1 = textStyle(progress, 0.0, 0.12, 0.15)
+    // Text 1: "Knowledge without connection" — fades in at 25%, holds to 38%, out by 45%
+    const s1 = textStyle(progress, 0.25, 0.38, 0.45)
     if (text1Ref.current) {
       text1Ref.current.style.opacity = s1.opacity
-      text1Ref.current.style.transform = s1.transform
+      text1Ref.current.style.transform = `translate(-50%, -50%) ${s1.transform}`
     }
 
-    // Text 2: 20% → 45%
-    const s2 = textStyle(progress, 0.20, 0.38, 0.45)
+    // Text 2: "is just noise." — appears just after text 1, exits together
+    const s2 = textStyle(progress, 0.27, 0.40, 0.45)
     if (text2Ref.current) {
       text2Ref.current.style.opacity = s2.opacity
-      text2Ref.current.style.transform = s2.transform
+      // Preserve translateX(-50%) centering alongside the translateY animation
+      text2Ref.current.style.transform = `translateX(-50%) ${s2.transform}`
     }
 
-    // Text 3: 50% → 75%
-    const s3 = textStyle(progress, 0.50, 0.68, 0.75)
+    // Text 3: "Clarito connects the dots." — fades in at 70%, holds to 85%, out by 90%
+    const s3 = textStyle(progress, 0.70, 0.85, 0.90)
     if (text3Ref.current) {
       text3Ref.current.style.opacity = s3.opacity
       text3Ref.current.style.transform = s3.transform
     }
 
-    // CTA: 80% → stays
-    const tCta = Math.max(0, Math.min(1, (progress - 0.80) / 0.06))
+    // CTA: "Start drawing your understanding →" — fades in at 93%, stays
+    const sCta = textStyle(progress, 0.93, 1.01, 1.1)
     if (ctaRef.current) {
-      ctaRef.current.style.opacity = tCta
-      ctaRef.current.style.transform = `translateY(${(1 - tCta) * 20}px)`
+      ctaRef.current.style.opacity = sCta.opacity
+      ctaRef.current.style.transform = `translateX(-50%) ${sCta.transform}`
     }
   })
 
@@ -234,102 +235,76 @@ function ScrollHero() {
         {/* Dark overlay for text readability */}
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', pointerEvents: 'none' }} />
 
-        {/* Text 1 — centered */}
+        {/* Text 1 — "Knowledge without connection" — dead center */}
         <div ref={text1Ref} style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          opacity: 0, transition: 'none', pointerEvents: 'none',
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          opacity: 0, pointerEvents: 'none', whiteSpace: 'nowrap',
         }}>
           <h1 style={{
-            color: '#fff', fontSize: 'clamp(32px, 5vw, 68px)',
+            color: '#fff', fontSize: 'clamp(28px, 4.5vw, 64px)',
             fontWeight: '800', letterSpacing: '-2px',
-            textAlign: 'center', margin: 0,
+            margin: 0, lineHeight: 1.1,
             fontFamily: 'system-ui, sans-serif',
-            textShadow: '0 2px 40px rgba(0,0,0,0.6)',
+            textShadow: '0 2px 24px rgba(0,0,0,0.9)',
           }}>
-            Knowledge without connection<br />
-            <span style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#818cf8', fontWeight: '600', letterSpacing: '0px' }}>
-              is just noise.
-            </span>
+            Knowledge without connection
           </h1>
         </div>
 
-        {/* Text 2 — left */}
+        {/* Text 2 — "is just noise." — caption directly below text 1, no backdrop */}
         <div ref={text2Ref} style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
-          padding: '0 8vw',
-          opacity: 0, pointerEvents: 'none',
+          position: 'absolute', top: 'calc(50% + 60px)', left: '70%',
+          transform: 'translateX(-50%)',
+          opacity: 0, pointerEvents: 'none', whiteSpace: 'nowrap',
         }}>
           <h2 style={{
-            color: '#fff', fontSize: 'clamp(24px, 3.5vw, 52px)',
-            fontWeight: '700', letterSpacing: '-1.5px',
-            margin: 0, maxWidth: '600px',
+            color: '#6366f1', fontSize: 'clamp(16px, 2.2vw, 32px)',
+            fontWeight: '500', fontStyle: 'italic', letterSpacing: '-0.3px',
+            margin: 0,
             fontFamily: 'system-ui, sans-serif',
-            textShadow: '0 2px 40px rgba(0,0,0,0.6)',
+            textShadow: '0 1px 16px rgba(0,0,0,0.9)',
           }}>
-            Sketch your thinking.<br />Connect your ideas.
+            is just noise.
           </h2>
         </div>
 
-        {/* Text 3 — right */}
+        {/* Text 3 — "Clarito connects the dots." — centered, white, medium */}
         <div ref={text3Ref} style={{
           position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-          padding: '0 8vw',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           opacity: 0, pointerEvents: 'none',
         }}>
           <h2 style={{
-            color: '#fff', fontSize: 'clamp(24px, 3.5vw, 52px)',
+            color: '#fff', fontSize: 'clamp(28px, 4vw, 56px)',
             fontWeight: '700', letterSpacing: '-1.5px',
-            margin: 0, maxWidth: '600px', textAlign: 'right',
-            fontFamily: 'system-ui, sans-serif',
-            textShadow: '0 2px 40px rgba(0,0,0,0.6)',
-          }}>
-            Organized by chapters.<br />Always in context.
-          </h2>
-        </div>
-
-        {/* CTA */}
-        <div ref={ctaRef} style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '24px',
-          opacity: 0,
-        }}>
-          <h2 style={{
-            color: '#fff', fontSize: 'clamp(28px, 4vw, 58px)',
-            fontWeight: '800', letterSpacing: '-2px',
             margin: 0, textAlign: 'center',
             fontFamily: 'system-ui, sans-serif',
             textShadow: '0 2px 40px rgba(0,0,0,0.6)',
           }}>
-            Start your first canvas.<br />
-            <span style={{ color: '#818cf8' }}>Free.</span>
+            Clarito connects the dots.
           </h2>
+        </div>
+
+        {/* CTA — "Start drawing your understanding →" — bottom center, clickable */}
+        <div ref={ctaRef} style={{
+          position: 'absolute', bottom: '5%', left: '50%',
+          transform: 'translateX(-50%)',
+          opacity: 0, whiteSpace: 'nowrap',
+        }}>
           <Link to="/register" style={{
-            padding: '15px 36px',
-            background: '#6366f1', color: '#fff',
-            borderRadius: '12px', fontSize: '16px', fontWeight: '700',
-            textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
-            boxShadow: '0 8px 32px rgba(99,102,241,0.5)',
-            transition: 'background 0.15s, transform 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#4f46e5'; e.currentTarget.style.transform = 'scale(1.04)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#6366f1'; e.currentTarget.style.transform = 'scale(1)' }}
-          >
-            Get started
-          </Link>
-          <Link to="/ai-mentor" style={{
-            color: '#818cf8', fontSize: '13px', fontWeight: '500',
-            textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
-            textShadow: '0 1px 12px rgba(0,0,0,0.8)',
+            display: 'block',
+            color: '#6366f1', fontSize: 'clamp(13px, 1.6vw, 18px)',
+            fontWeight: '500', textDecoration: 'none',
+            fontFamily: 'system-ui, sans-serif',
+            letterSpacing: '0.2px',
+            textShadow: '0 1px 20px rgba(0,0,0,0.9)',
             transition: 'color 0.15s',
           }}
-            onMouseEnter={e => e.currentTarget.style.color = '#c4b5fd'}
-            onMouseLeave={e => e.currentTarget.style.color = '#818cf8'}
+            onMouseEnter={e => e.currentTarget.style.color = '#818cf8'}
+            onMouseLeave={e => e.currentTarget.style.color = '#6366f1'}
           >
-            Interested in AI Mentor? Join the waitlist for free early access →
+            Start drawing your understanding →
           </Link>
         </div>
       </div>
