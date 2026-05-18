@@ -65,6 +65,20 @@ class ChapterUpdate(BaseModel):
     canvas_data: dict[str, Any]
 
 
+# --- Waitlist ---
+
+class WaitlistJoin(BaseModel):
+    email: EmailStr
+
+
+class WaitlistResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    email: str
+    created_at: datetime
+
+
 class ChapterResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

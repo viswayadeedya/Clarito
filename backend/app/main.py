@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import Base, engine
 from app.routers.auth import router as auth_router
 from app.routers.chapters import router as chapters_router
+from app.routers.waitlist import router as waitlist_router
 from app.routers.workspaces import router as workspaces_router
 
 
@@ -35,6 +36,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(chapters_router)
 app.include_router(workspaces_router)
+app.include_router(waitlist_router)
 
 
 @app.get("/health")

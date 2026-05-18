@@ -80,3 +80,21 @@ class Chapter(Base):
 
     owner: Mapped["User"] = relationship(back_populates="chapters")
     workspace: Mapped["Workspace | None"] = relationship(back_populates="chapters")
+
+
+class Waitlist(Base):
+    __tablename__ = "waitlist"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        server_default=text("now()"),
+    )

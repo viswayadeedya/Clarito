@@ -27,7 +27,25 @@ function Navbar() {
       <span style={{ fontSize: '21px', fontWeight: '800', color: '#fff', letterSpacing: '-1px' }}>
         Clarito
       </span>
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <Link to="/ai-mentor" style={{
+          padding: '8px 16px',
+          background: 'transparent',
+          color: '#a78bfa',
+          border: '1px solid rgba(167,139,250,0.25)',
+          borderRadius: '9px',
+          fontSize: '13px', fontWeight: '500',
+          textDecoration: 'none',
+          fontFamily: 'system-ui, sans-serif',
+          transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+          display: 'flex', alignItems: 'center', gap: '6px',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.08)'; e.currentTarget.style.borderColor = 'rgba(167,139,250,0.5)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(167,139,250,0.25)' }}
+        >
+          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#a78bfa', display: 'inline-block', flexShrink: 0 }}/>
+          AI Mentor
+        </Link>
         <Link to="/login" style={{
           padding: '8px 18px',
           background: 'transparent',
@@ -69,8 +87,9 @@ function Navbar() {
 function ScrollHero() {
   const containerRef = useRef(null)
   const canvasRef = useRef(null)
-  const frameRef = useRef(0)
   const imagesRef = useRef([])
+  const loadedRef = useRef(new Set())
+  const frameRef = useRef(0)
 
   // Text overlay refs
   const text1Ref = useRef(null)
@@ -80,48 +99,58 @@ function ScrollHero() {
 
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end end'] })
 
-  // Preload all frames
+  function sizeCanvas() {
+    const c = canvasRef.current
+    if (!c) return
+    c.width = window.innerWidth
+    c.height = window.innerHeight
+    console.log('canvas sized:', c.width, c.height)
+    // Redraw current frame — setting .width clears the canvas
+    const img = imagesRef.current[frameRef.current]
+    if (img && img.complete && img.naturalWidth > 0) {
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+    }
+  }
+
+  // Size canvas on mount and on every resize
   useEffect(() => {
-    imagesRef.current = Array.from({ length: TOTAL_FRAMES }, (_, i) => {
+    sizeCanvas()
+    window.addEventListener('resize', sizeCanvas)
+    return () => window.removeEventListener('resize', sizeCanvas)
+  }, [])
+
+  // Preload all frames — draw as soon as each one loads
+  useEffect(() => {
+    const imgs = Array.from({ length: TOTAL_FRAMES }, (_, i) => {
       const img = new Image()
+      img.onload = () => {
+        loadedRef.current.add(i)
+        // Draw immediately if this is the active frame
+        if (frameRef.current === i) {
+          const c = canvasRef.current
+          if (c && c.width > 0 && c.height > 0) {
+            console.log('onload drawing frame', i, c.width, c.height)
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+          }
+        }
+      }
       img.src = frameSrc(i)
       return img
     })
+    imagesRef.current = imgs
   }, [])
 
-  // Draw current frame on canvas
-  function drawFrame(index) {
-    const img = imagesRef.current[index]
+  function drawFrame(idx) {
     const canvas = canvasRef.current
-    if (!canvas || !img?.complete || !img.naturalWidth) return
-    const ctx = canvas.getContext('2d')
-    const { width, height } = canvas
-    const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight)
-    const sw = img.naturalWidth * scale
-    const sh = img.naturalHeight * scale
-    const sx = (width - sw) / 2
-    const sy = (height - sh) / 2
-    ctx.clearRect(0, 0, width, height)
-    ctx.drawImage(img, sx, sy, sw, sh)
+    const img = imagesRef.current[idx]
+    console.log('drawing frame', idx, canvas?.width, canvas?.height, img?.complete, img?.naturalWidth)
+    if (!canvas || canvas.width === 0 || canvas.height === 0) return
+    if (!img || !img.complete || img.naturalWidth === 0) return
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
   }
 
-  // Resize canvas to window
-  useEffect(() => {
-    function resize() {
-      const canvas = canvasRef.current
-      if (!canvas) return
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-      drawFrame(frameRef.current)
-    }
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
-  }, [])
-
   // Helper: opacity + translateY for a text block
-  function textStyle(progress, inStart, holdEnd, outEnd, direction = 'up') {
-    const sign = direction === 'up' ? -1 : 1
+  function textStyle(progress, inStart, holdEnd, outEnd) {
     if (progress < inStart) {
       const t = Math.max(0, (progress - (inStart - 0.04)) / 0.04)
       return { opacity: t, transform: `translateY(${(1 - t) * 20}px)` }
@@ -131,39 +160,43 @@ function ScrollHero() {
     }
     if (progress <= outEnd) {
       const t = (progress - holdEnd) / (outEnd - holdEnd)
-      return { opacity: 1 - t, transform: `translateY(${sign * t * 20}px)` }
+      return { opacity: 1 - t, transform: `translateY(${-t * 20}px)` }
     }
-    return { opacity: 0, transform: `translateY(${sign * 20}px)` }
+    return { opacity: 0, transform: 'translateY(-20px)' }
   }
 
   useMotionValueEvent(scrollYProgress, 'change', progress => {
-    // Update frame
     const idx = Math.min(Math.floor(progress * TOTAL_FRAMES), TOTAL_FRAMES - 1)
+
+    console.log(`scroll: ${(progress * 100).toFixed(1)}%  frame: ${idx}`)
+
     if (idx !== frameRef.current) {
       frameRef.current = idx
-      const img = imagesRef.current[idx]
-      if (img?.complete && img.naturalWidth) {
+      if (loadedRef.current.has(idx)) {
         drawFrame(idx)
-      } else if (img) {
-        img.onload = () => drawFrame(idx)
+      } else {
+        // Fall back to nearest already-loaded frame
+        for (let j = idx - 1; j >= 0; j--) {
+          if (loadedRef.current.has(j)) { drawFrame(j); break }
+        }
       }
     }
 
-    // Text 1: 0% → 15%  "Where understanding clicks"
+    // Text 1: 0% → 15%
     const s1 = textStyle(progress, 0.0, 0.12, 0.15)
     if (text1Ref.current) {
       text1Ref.current.style.opacity = s1.opacity
       text1Ref.current.style.transform = s1.transform
     }
 
-    // Text 2: 20% → 45%  "Sketch your thinking..."
+    // Text 2: 20% → 45%
     const s2 = textStyle(progress, 0.20, 0.38, 0.45)
     if (text2Ref.current) {
       text2Ref.current.style.opacity = s2.opacity
       text2Ref.current.style.transform = s2.transform
     }
 
-    // Text 3: 50% → 75%  "Organized by chapters..."
+    // Text 3: 50% → 75%
     const s3 = textStyle(progress, 0.50, 0.68, 0.75)
     if (text3Ref.current) {
       text3Ref.current.style.opacity = s3.opacity
@@ -183,11 +216,20 @@ function ScrollHero() {
       {/* Sticky viewport */}
       <div style={{
         position: 'sticky', top: 0,
-        width: '100vw', height: '100vh',
+        width: '100%', height: '100vh',
         overflow: 'hidden', background: '#000',
       }}>
-        {/* Frame canvas */}
-        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        {/* Single canvas — frames drawn directly, no React re-renders */}
+        <canvas
+          ref={canvasRef}
+          style={{
+            position: 'absolute',
+            top: 0, left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'block',
+          }}
+        />
 
         {/* Dark overlay for text readability */}
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', pointerEvents: 'none' }} />
@@ -205,7 +247,10 @@ function ScrollHero() {
             fontFamily: 'system-ui, sans-serif',
             textShadow: '0 2px 40px rgba(0,0,0,0.6)',
           }}>
-            Where understanding clicks
+            Knowledge without connection<br />
+            <span style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#818cf8', fontWeight: '600', letterSpacing: '0px' }}>
+              is just noise.
+            </span>
           </h1>
         </div>
 
@@ -275,6 +320,17 @@ function ScrollHero() {
           >
             Get started
           </Link>
+          <Link to="/ai-mentor" style={{
+            color: '#818cf8', fontSize: '13px', fontWeight: '500',
+            textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
+            textShadow: '0 1px 12px rgba(0,0,0,0.8)',
+            transition: 'color 0.15s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = '#c4b5fd'}
+            onMouseLeave={e => e.currentTarget.style.color = '#818cf8'}
+          >
+            Interested in AI Mentor? Join the waitlist for free early access →
+          </Link>
         </div>
       </div>
     </div>
@@ -331,7 +387,7 @@ function FeatureCard({ title, desc }) {
 
 export default function Landing() {
   return (
-    <div style={{ background: '#0f0f0f', color: '#fff' }}>
+    <div style={{ background: '#0f0f0f', color: '#fff', overflowX: 'clip' }}>
       <Navbar />
       <ScrollHero />
 
@@ -354,7 +410,7 @@ export default function Landing() {
                   <line x1="3" y1="13" x2="13" y2="13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                 </svg>
               }
-              text="Bullet points miss the connections. Ideas don't live in lists — they live in relationships."
+              text="Bullet points miss the connections. Ideas don't live in lists. They live in relationships."
             />
             <PainPoint
               icon={
@@ -363,7 +419,7 @@ export default function Landing() {
                   <line x1="5.5" y1="11" x2="12.5" y2="11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                 </svg>
               }
-              text="Linear notes kill nonlinear thinking. Your brain doesn't work top-to-bottom — your tools shouldn't either."
+              text="Linear notes kill nonlinear thinking. Your brain doesn't work top-to-bottom. Your tools shouldn't either."
             />
             <PainPoint
               icon={
@@ -395,7 +451,7 @@ export default function Landing() {
           }}>
             <FeatureCard
               title="Canvas that thinks like you"
-              desc="Draw, connect, annotate — freely. No templates, no constraints. Just a blank canvas ready for your ideas."
+              desc="Draw, connect, annotate freely. No templates, no constraints. Just a blank canvas ready for your ideas."
             />
             <FeatureCard
               title="Chapter organization"
@@ -405,53 +461,174 @@ export default function Landing() {
               title="Auto-saves everything"
               desc="Your work saves every few seconds without you thinking about it. Close the tab. Come back. It's all there."
             />
+            <div style={{
+              background: '#141414', border: '1px solid rgba(167,139,250,0.2)',
+              borderRadius: '16px', padding: '28px 24px', position: 'relative',
+              transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
+              cursor: 'default',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(167,139,250,0.5)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(167,139,250,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(167,139,250,0.2)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
+            >
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                padding: '3px 10px', marginBottom: '12px',
+                background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.25)',
+                borderRadius: '999px', fontSize: '10px', fontWeight: '600',
+                color: '#a78bfa', letterSpacing: '0.5px', textTransform: 'uppercase',
+              }}>
+                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#a78bfa', display: 'inline-block' }}/>
+                Coming soon
+              </div>
+              <h3 style={{ color: '#fff', fontSize: '17px', fontWeight: '700', margin: '0 0 10px', fontFamily: 'system-ui, sans-serif' }}>
+                AI Mentor
+              </h3>
+              <p style={{ color: '#52525b', fontSize: '14px', lineHeight: '1.65', margin: '0 0 16px', fontFamily: 'system-ui, sans-serif' }}>
+                Select any part of your canvas and ask questions. An AI that sees exactly what you're working on and helps you think deeper.
+              </p>
+              <a href="/ai-mentor" style={{
+                color: '#a78bfa', fontSize: '13px', fontWeight: '500',
+                textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
+                transition: 'color 0.15s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.color = '#c4b5fd'}
+                onMouseLeave={e => e.currentTarget.style.color = '#a78bfa'}
+              >
+                Join the waitlist →
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Section 3 — Final CTA */}
-      <section style={{ background: '#0f0f0f', padding: '120px 32px', textAlign: 'center' }}>
-        <h2 style={{
-          fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: '800',
-          letterSpacing: '-2px', margin: '0 0 12px',
-          fontFamily: 'system-ui, sans-serif', color: '#fff',
+      {/* AI Mentor teaser section */}
+      <section style={{ background: '#080808', padding: '80px 32px', borderTop: '1px solid #141414' }}>
+        <div style={{
+          maxWidth: '720px', margin: '0 auto',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '20px',
         }}>
-          Start your first canvas.{' '}
-          <span style={{ color: '#6366f1' }}>Free.</span>
-        </h2>
-        <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 36px', fontFamily: 'system-ui, sans-serif' }}>
-          No credit card required
-        </p>
-        <Link to="/register" style={{
-          display: 'inline-block',
-          padding: '15px 40px',
-          background: '#6366f1', color: '#fff',
-          borderRadius: '12px', fontSize: '16px', fontWeight: '700',
-          textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
-          transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#4f46e5'; e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(99,102,241,0.45)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#6366f1'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
-        >
-          Get started
-        </Link>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '4px 14px',
+            background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)',
+            borderRadius: '999px', fontSize: '11px', fontWeight: '600',
+            color: '#a78bfa', letterSpacing: '0.5px', textTransform: 'uppercase',
+          }}>
+            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#a78bfa', display: 'inline-block' }}/>
+            Coming soon
+          </div>
+          <h2 style={{
+            fontSize: 'clamp(26px, 4vw, 44px)', fontWeight: '800',
+            letterSpacing: '-1.5px', margin: 0, color: '#fff',
+            fontFamily: 'system-ui, sans-serif',
+          }}>
+            An AI that sees<br />exactly what you're thinking.
+          </h2>
+          <p style={{ color: '#52525b', fontSize: '15px', lineHeight: '1.7', margin: 0, maxWidth: '520px', fontFamily: 'system-ui, sans-serif' }}>
+            Select any part of your canvas and ask questions. AI Mentor understands your diagrams, your notes, your connections — not just your words.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center', marginTop: '8px' }}>
+            <Link to="/ai-mentor" style={{
+              padding: '13px 28px',
+              background: 'rgba(167,139,250,0.15)', color: '#c4b5fd',
+              border: '1px solid rgba(167,139,250,0.35)',
+              borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+              textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
+              transition: 'background 0.15s, border-color 0.15s, transform 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.22)'; e.currentTarget.style.borderColor = 'rgba(167,139,250,0.6)'; e.currentTarget.style.transform = 'scale(1.03)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.15)'; e.currentTarget.style.borderColor = 'rgba(167,139,250,0.35)'; e.currentTarget.style.transform = 'scale(1)' }}
+            >
+              Join waitlist — free early access
+            </Link>
+            <Link to="/ai-mentor" style={{
+              color: '#52525b', fontSize: '13px', fontWeight: '500',
+              textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
+              transition: 'color 0.15s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.color = '#a1a1aa'}
+              onMouseLeave={e => e.currentTarget.style.color = '#52525b'}
+            >
+              Learn more →
+            </Link>
+          </div>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{
-        background: '#080808',
-        borderTop: '1px solid #141414',
-        padding: '28px 32px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '12px',
-      }}>
-        <span style={{ fontSize: '18px', fontWeight: '800', color: '#6366f1', letterSpacing: '-1px', fontFamily: 'system-ui, sans-serif' }}>
-          Clarito
-        </span>
-        <span style={{ color: '#3f3f46', fontSize: '13px', fontFamily: 'system-ui, sans-serif' }}>
-          © 2026 Clarito. All rights reserved.
-        </span>
-      </footer>
+      {/* Section 3 — Final CTA + Footer wrapped with shared stroke background */}
+      <div style={{ position: 'relative', overflow: 'hidden', background: '#0f0f0f' }}>
+
+        {/* Animated stroke background */}
+        <style>{`
+          @keyframes land-draw {
+            to { stroke-dashoffset: 0; }
+          }
+          .land-cta-stroke {
+            stroke-dasharray: 1400;
+            stroke-dashoffset: 1400;
+            animation: land-draw linear forwards;
+          }
+        `}</style>
+        <svg
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+          viewBox="0 0 1100 500"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <path d="M -40 120 Q 200 40 500 140 T 1100 220"   className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.07" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '4s',   animationDelay: '0.2s'  }}/>
+          <path d="M 80 350 Q 360 280 640 360 Q 900 430 1100 330" className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.07" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '3.5s', animationDelay: '1s'    }}/>
+          <path d="M 0 480 L 1000 480"                       className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.05" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '3s',   animationDelay: '1.8s'  }}/>
+          <path d="M 160 60 L 440 60 L 440 200 L 160 200 Z"  className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.06" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '3.5s', animationDelay: '2.4s'  }}/>
+          <path d="M 700 380 Q 820 320 900 400 Q 980 480 860 470 Q 740 460 720 390" className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.07" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '4s',   animationDelay: '3s'    }}/>
+          <path d="M 820 40 Q 920 110 890 210 Q 860 310 960 360" className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.06" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '3.5s', animationDelay: '1.4s'  }}/>
+          <path d="M 40 260 L 180 200 L 320 240 L 480 170"   className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.06" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '2.8s', animationDelay: '3.6s'  }}/>
+          <path d="M 520 430 Q 640 380 760 440 T 1060 420"   className="land-cta-stroke" stroke="#6366f1" strokeOpacity="0.05" strokeWidth="1.8" strokeLinecap="round" fill="none" style={{ animationDuration: '3s',   animationDelay: '2s'    }}/>
+        </svg>
+
+        {/* CTA content */}
+        <section style={{ position: 'relative', zIndex: 1, padding: '120px 32px', textAlign: 'center' }}>
+          <h2 style={{
+            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: '800',
+            letterSpacing: '-2px', margin: '0 0 12px',
+            fontFamily: 'system-ui, sans-serif', color: '#fff',
+          }}>
+            Start your first canvas.{' '}
+            <span style={{ color: '#6366f1' }}>Free.</span>
+          </h2>
+          <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 36px', fontFamily: 'system-ui, sans-serif' }}>
+            No credit card required
+          </p>
+          <Link to="/register" style={{
+            display: 'inline-block',
+            padding: '15px 40px',
+            background: '#6366f1', color: '#fff',
+            borderRadius: '12px', fontSize: '16px', fontWeight: '700',
+            textDecoration: 'none', fontFamily: 'system-ui, sans-serif',
+            transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#4f46e5'; e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(99,102,241,0.45)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#6366f1'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+          >
+            Get started
+          </Link>
+        </section>
+
+        {/* Footer */}
+        <footer style={{
+          position: 'relative', zIndex: 1,
+          borderTop: '1px solid rgba(99,102,241,0.1)',
+          padding: '28px 32px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: '12px',
+        }}>
+          <span style={{ fontSize: '18px', fontWeight: '800', color: '#6366f1', letterSpacing: '-1px', fontFamily: 'system-ui, sans-serif' }}>
+            Clarito
+          </span>
+          <span style={{ color: '#3f3f46', fontSize: '13px', fontFamily: 'system-ui, sans-serif' }}>
+            © 2026 Clarito. All rights reserved.
+          </span>
+        </footer>
+
+      </div>
     </div>
   )
 }

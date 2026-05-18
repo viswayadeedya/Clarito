@@ -7,3 +7,15 @@
   margin: 0;
   padding: 0;
 }
+
+html, body {
+  overflow-x: clip;
+}
+
+/* Hide scrollbar everywhere while keeping scroll */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
