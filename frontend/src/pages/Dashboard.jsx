@@ -145,6 +145,102 @@ function Modal({ onClose, onCreate }) {
   )
 }
 
+function RenameModal({ current, label, onClose, onRename }) {
+  const [name, setName] = useState(current)
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+    inputRef.current?.select()
+  }, [])
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    const trimmed = name.trim()
+    if (!trimmed || trimmed === current) { onClose(); return }
+    setLoading(true)
+    await onRename(trimmed)
+    setLoading(false)
+  }
+
+  return (
+    <div
+      onKeyDown={e => { if (e.key === 'Escape') onClose() }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(6px)',
+        animation: 'modalBgIn 0.2s ease both',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        width: '100%', maxWidth: '420px', margin: '24px',
+        background: 'rgba(18,18,18,0.95)',
+        border: '1px solid rgba(99,102,241,0.3)',
+        borderRadius: '18px', padding: '36px 32px',
+        boxShadow: '0 0 48px rgba(99,102,241,0.12), 0 24px 64px rgba(0,0,0,0.6)',
+        animation: 'modalCardIn 0.3s cubic-bezier(0.22,1,0.36,1) both',
+      }}>
+        <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: '700', margin: '0 0 6px' }}>
+          Rename {label}
+        </h3>
+        <p style={{ color: '#52525b', fontSize: '13px', margin: '0 0 24px' }}>
+          Enter a new name.
+        </p>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            style={{
+              width: '100%', padding: '11px 14px',
+              background: 'rgba(255,255,255,0.04)', color: '#fff',
+              border: '1px solid rgba(99,102,241,0.25)', borderRadius: '10px',
+              fontSize: '14px', boxSizing: 'border-box', outline: 'none',
+              fontFamily: 'system-ui, sans-serif',
+              transition: 'border-color 0.2s, box-shadow 0.2s',
+            }}
+            onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.18)' }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(99,102,241,0.25)'; e.target.style.boxShadow = 'none' }}
+          />
+          <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+            <button type="button" onClick={onClose}
+              style={{
+                flex: 1, padding: '11px', background: 'transparent',
+                color: '#71717a', border: '1px solid #27272a', borderRadius: '10px',
+                fontSize: '14px', fontWeight: '500', cursor: 'pointer',
+                fontFamily: 'system-ui, sans-serif', transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.target.style.borderColor = '#3f3f46'; e.target.style.color = '#a1a1aa' }}
+              onMouseLeave={e => { e.target.style.borderColor = '#27272a'; e.target.style.color = '#71717a' }}
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={loading || !name.trim()}
+              style={{
+                flex: 1, padding: '11px', background: '#6366f1', color: '#fff',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+                cursor: loading || !name.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !name.trim() ? 0.5 : 1,
+                fontFamily: 'system-ui, sans-serif',
+                transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+              }}
+              onMouseEnter={e => { if (!loading && name.trim()) { e.target.style.background = '#4f46e5'; e.target.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)' } }}
+              onMouseLeave={e => { e.target.style.background = '#6366f1'; e.target.style.boxShadow = 'none' }}
+            >
+              {loading ? 'Renaming…' : 'Rename'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function DeleteModal({ workspace, onClose, onConfirm, loading }) {
   const [typed, setTyped] = useState('')
   const inputRef = useRef(null)
@@ -286,7 +382,7 @@ function DeleteModal({ workspace, onClose, onConfirm, loading }) {
   )
 }
 
-function WorkspaceCard({ ws, index, onNavigate, onDeleteClick, isMenuOpen, onMenuToggle, isFading }) {
+function WorkspaceCard({ ws, index, onNavigate, onDeleteClick, onRenameClick, isMenuOpen, onMenuToggle, isFading }) {
   const menuRef = useRef(null)
 
   return (
@@ -337,6 +433,26 @@ function WorkspaceCard({ ws, index, onNavigate, onDeleteClick, isMenuOpen, onMen
                 animation: 'dropdownIn 0.15s cubic-bezier(0.22,1,0.36,1) both',
               }}>
                 <button
+                  onClick={e => { e.stopPropagation(); onRenameClick() }}
+                  style={{
+                    width: '100%', padding: '8px 12px',
+                    background: 'transparent', border: 'none',
+                    color: '#a1a1aa', fontSize: '13px', fontWeight: '500',
+                    cursor: 'pointer', borderRadius: '7px',
+                    textAlign: 'left', fontFamily: 'system-ui, sans-serif',
+                    transition: 'background 0.12s, color 0.12s',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#a1a1aa' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 4l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                  Rename
+                </button>
+                <button
                   onClick={e => { e.stopPropagation(); onDeleteClick() }}
                   style={{
                     width: '100%', padding: '8px 12px',
@@ -384,6 +500,7 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [fadingIds, setFadingIds] = useState(new Set())
+  const [renameTarget, setRenameTarget] = useState(null)
 
   useEffect(() => {
     api.get('/workspaces/')
@@ -410,6 +527,17 @@ export default function Dashboard() {
   const openDeleteModal = ws => {
     setOpenMenuId(null)
     setDeleteTarget(ws)
+  }
+
+  const openRenameModal = ws => {
+    setOpenMenuId(null)
+    setRenameTarget(ws)
+  }
+
+  const renameWorkspace = async newName => {
+    const { data } = await api.patch(`/workspaces/${renameTarget.id}`, { name: newName })
+    setWorkspaces(ws => ws.map(w => w.id === data.id ? data : w))
+    setRenameTarget(null)
   }
 
   const deleteWorkspace = async () => {
@@ -698,6 +826,7 @@ export default function Dashboard() {
                   index={i}
                   onNavigate={() => navigate(`/workspaces/${ws.id}`)}
                   onDeleteClick={() => openDeleteModal(ws)}
+                  onRenameClick={() => openRenameModal(ws)}
                   isMenuOpen={openMenuId === ws.id}
                   onMenuToggle={() => setOpenMenuId(id => id === ws.id ? null : ws.id)}
                   isFading={fadingIds.has(ws.id)}
@@ -720,6 +849,16 @@ export default function Dashboard() {
           onClose={() => { setDeleteTarget(null) }}
           onConfirm={deleteWorkspace}
           loading={deleteLoading}
+        />
+      )}
+
+      {/* Rename modal */}
+      {renameTarget && (
+        <RenameModal
+          current={renameTarget.name}
+          label="workspace"
+          onClose={() => setRenameTarget(null)}
+          onRename={renameWorkspace}
         />
       )}
     </>

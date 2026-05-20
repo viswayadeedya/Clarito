@@ -16,6 +16,12 @@ class Settings(BaseSettings):
 
     frontend_url: str = "http://localhost:5173"
 
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = "clarito-images"
+    r2_public_url: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

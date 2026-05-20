@@ -119,7 +119,96 @@ function Modal({ onClose, onCreate }) {
   )
 }
 
-function ChapterCard({ chapter, onOpen, onDelete, index }) {
+function RenameModal({ current, onClose, onRename }) {
+  const [title, setTitle] = useState(current)
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+    inputRef.current?.select()
+  }, [])
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    const trimmed = title.trim()
+    if (!trimmed || trimmed === current) { onClose(); return }
+    setLoading(true)
+    await onRename(trimmed)
+    setLoading(false)
+  }
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      onKeyDown={e => { if (e.key === 'Escape') onClose() }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(6px)',
+        animation: 'ws-modalBgIn 0.2s ease both',
+      }}
+    >
+      <div style={{
+        width: '100%', maxWidth: '420px', margin: '24px',
+        background: 'rgba(18,18,18,0.95)',
+        border: '1px solid rgba(99,102,241,0.3)',
+        borderRadius: '18px', padding: '36px 32px',
+        boxShadow: '0 0 48px rgba(99,102,241,0.12), 0 24px 64px rgba(0,0,0,0.6)',
+        animation: 'ws-modalCardIn 0.3s cubic-bezier(0.22,1,0.36,1) both',
+      }}>
+        <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: '700', margin: '0 0 6px' }}>Rename chapter</h3>
+        <p style={{ color: '#52525b', fontSize: '13px', margin: '0 0 24px' }}>Enter a new name.</p>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            style={{
+              width: '100%', padding: '11px 14px',
+              background: 'rgba(255,255,255,0.04)', color: '#fff',
+              border: '1px solid rgba(99,102,241,0.25)', borderRadius: '10px',
+              fontSize: '14px', boxSizing: 'border-box', outline: 'none',
+              fontFamily: 'system-ui, sans-serif',
+              transition: 'border-color 0.2s, box-shadow 0.2s',
+            }}
+            onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.18)' }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(99,102,241,0.25)'; e.target.style.boxShadow = 'none' }}
+          />
+          <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+            <button type="button" onClick={onClose}
+              style={{
+                flex: 1, padding: '11px', background: 'transparent',
+                color: '#71717a', border: '1px solid #27272a',
+                borderRadius: '10px', fontSize: '14px', fontWeight: '500',
+                cursor: 'pointer', fontFamily: 'system-ui, sans-serif',
+                transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.target.style.borderColor = '#3f3f46'; e.target.style.color = '#a1a1aa' }}
+              onMouseLeave={e => { e.target.style.borderColor = '#27272a'; e.target.style.color = '#71717a' }}
+            >Cancel</button>
+            <button type="submit" disabled={loading || !title.trim()}
+              style={{
+                flex: 1, padding: '11px', background: '#6366f1', color: '#fff',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+                cursor: loading || !title.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !title.trim() ? 0.5 : 1,
+                fontFamily: 'system-ui, sans-serif',
+                transition: 'background 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={e => { if (!loading && title.trim()) { e.target.style.background = '#4f46e5'; e.target.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)' } }}
+              onMouseLeave={e => { e.target.style.background = '#6366f1'; e.target.style.boxShadow = 'none' }}
+            >{loading ? 'Renaming…' : 'Rename'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function ChapterCard({ chapter, onOpen, onDelete, onRename, index }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const menuRef = useRef(null)
@@ -190,9 +279,28 @@ function ChapterCard({ chapter, onOpen, onDelete, index }) {
                 background: '#1a1a1a', border: '1px solid #27272a',
                 borderRadius: '10px', padding: '4px',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                minWidth: '130px',
+                minWidth: '140px',
                 animation: 'ws-menuIn 0.15s ease both',
               }}>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(false); onRename(chapter) }}
+                  style={{
+                    width: '100%', padding: '8px 12px', background: 'none',
+                    color: '#a1a1aa', border: 'none', borderRadius: '7px',
+                    fontSize: '13px', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'system-ui, sans-serif',
+                    transition: 'background 0.1s, color 0.1s',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#a1a1aa' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 4l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                  Rename
+                </button>
                 <button
                   onClick={handleDelete}
                   style={{
@@ -201,10 +309,15 @@ function ChapterCard({ chapter, onOpen, onDelete, index }) {
                     fontSize: '13px', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'system-ui, sans-serif',
                     transition: 'background 0.1s',
+                    display: 'flex', alignItems: 'center', gap: '8px',
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.1)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}
                 >
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <path d="M1.5 3.5h11M5 3.5V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1M11.5 3.5l-.7 8a1 1 0 01-1 .9H4.2a1 1 0 01-1-.9l-.7-8"
+                      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                   Delete chapter
                 </button>
               </div>
@@ -228,6 +341,7 @@ export default function Workspace() {
   const [chapters, setChapters] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [renameTarget, setRenameTarget] = useState(null)
 
   useEffect(() => {
     Promise.all([api.get(`/workspaces/${id}`), api.get(`/chapters/?workspace_id=${id}`)])
@@ -248,6 +362,12 @@ export default function Workspace() {
   const deleteChapter = async chapterId => {
     await api.delete(`/chapters/${chapterId}`)
     setChapters(cs => cs.filter(c => c.id !== chapterId))
+  }
+
+  const renameChapter = async newTitle => {
+    const { data } = await api.patch(`/chapters/${renameTarget.id}/title`, { title: newTitle })
+    setChapters(cs => cs.map(c => c.id === data.id ? { ...c, title: data.title } : c))
+    setRenameTarget(null)
   }
 
   return (
@@ -458,6 +578,7 @@ export default function Workspace() {
                   index={i}
                   onOpen={chId => navigate(`/canvas/${chId}`)}
                   onDelete={deleteChapter}
+                  onRename={ch => setRenameTarget(ch)}
                 />
               ))}
             </div>
@@ -467,6 +588,14 @@ export default function Workspace() {
 
       {showModal && (
         <Modal onClose={() => setShowModal(false)} onCreate={createChapter} />
+      )}
+
+      {renameTarget && (
+        <RenameModal
+          current={renameTarget.title}
+          onClose={() => setRenameTarget(null)}
+          onRename={renameChapter}
+        />
       )}
     </>
   )

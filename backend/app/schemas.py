@@ -65,6 +65,10 @@ class ChapterUpdate(BaseModel):
     canvas_data: dict[str, Any]
 
 
+class ChapterTitleUpdate(BaseModel):
+    title: str
+
+
 # --- Waitlist ---
 
 class WaitlistJoin(BaseModel):
