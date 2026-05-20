@@ -8,11 +8,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
     reset_token_expire_minutes: int = 15
 
-    mail_username: str = ""
-    mail_password: str = ""
-    mail_from: str = ""
-    mail_server: str = "smtp.gmail.com"
-    mail_port: int = 587
+    resend_api_key: str = ""
+    mail_from: str = "onboarding@resend.dev"
 
     frontend_url: str = "http://localhost:5173"
 
