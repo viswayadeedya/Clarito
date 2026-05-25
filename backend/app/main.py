@@ -41,6 +41,6 @@ app.include_router(workspaces_router)
 app.include_router(waitlist_router)
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "service": "FDE Journey API"}
